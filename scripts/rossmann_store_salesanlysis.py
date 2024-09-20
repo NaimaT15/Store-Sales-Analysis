@@ -2,20 +2,47 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
+import logging
 
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
+
+
+# Configure the logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Create a file handler to log to a file
+file_handler = logging.FileHandler('sales_analysis.log', mode='w')  # 'w' to overwrite the file each run
+file_handler.setLevel(logging.INFO)
+
+# Create a stream handler to log to the notebook console
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+
+# Define a common formatter for both handlers
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+# Add the formatter to both handlers
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+# Add both handlers to the logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+logger.info("Logger setup complete. Logging to both file and console.")
 
 def check_promotion_distribution(train_df, test_df, promotion_column):
     """
     Check the distribution of promotions between training and test sets.
     
     """
-    
+    logger.info("Checking promotion distribution between training and test sets.")
     # Check for missing values in the promotion column
     if train_df[promotion_column].isnull().sum() > 0 or test_df[promotion_column].isnull().sum() > 0:
-        print("Warning: Missing values found in the promotion column. Consider handling them before analysis.")
-
+        logger.warning("Missing values found in the promotion column. Consider handling them before analysis.")
+    logger.info("Plotting the promotion distribution for the training and test sets.")
     # Plot the distribution of promotions in both datasets
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
@@ -36,26 +63,29 @@ def check_promotion_distribution(train_df, test_df, promotion_column):
     plt.show()
 
     # Statistical comparison (optional)
+    logger.info("Calculating normalized promotion distribution for both datasets.")
     train_promo_dist = train_df[promotion_column].value_counts(normalize=True)
     test_promo_dist = test_df[promotion_column].value_counts(normalize=True)
+    logger.info(f"Training Set Promotion Distribution (Normalized):\n{train_promo_dist}")
+    logger.info(f"Test Set Promotion Distribution (Normalized):\n{test_promo_dist}")
 
-    print("Training Set Promotion Distribution (Normalized):\n", train_promo_dist)
-    print("\nTest Set Promotion Distribution (Normalized):\n", test_promo_dist)
+   
     
     # Calculate percentage difference between the two distributions
     promo_diff = abs(train_promo_dist - test_promo_dist).fillna(0)
-    print("\nPercentage Difference in Promotion Distribution:\n", promo_diff)
+    logger.info(f"Percentage Difference in Promotion Distribution:\n{promo_diff}")
 
 
 def merge_train_store(train_file, store_file):
     """
     Merge the train and store datasets on the 'Store' column.
     """
+    logger.info("Merging the train and store datasets on the 'Store' column.")
 
 
     # Perform the merge operation on the 'Store' column
     merged_df = pd.merge(train_file, store_file, how='inner', on='Store')
-
+    logger.info(f"Merge completed. The merged dataset has {merged_df.shape[0]} rows and {merged_df.shape[1]} columns.")
     # Return the merged DataFrame
     return merged_df
 
@@ -86,9 +116,13 @@ def sales_behavior_holidays_auto(merged_df, sales_column, date_column, state_hol
     """
     Check and compare sales behavior before, during, and after holidays using 'StateHoliday' or 'SchoolHoliday'.
     """
+
+    logger.info("Starting sales behavior analysis around holidays.")
+
     
     # Ensure date_column is in datetime format
     merged_df[date_column] = pd.to_datetime(merged_df[date_column])
+    logger.info("Converted date column to datetime format.")
 
     # Create a new column to indicate the holiday period: State or School holidays
     merged_df['HolidayPeriod'] = 'Normal'
@@ -98,6 +132,7 @@ def sales_behavior_holidays_auto(merged_df, sales_column, date_column, state_hol
 
     # Identify holiday dates
     holiday_dates = merged_df.loc[holiday_mask, date_column].unique()
+    logger.info(f"Identified {len(holiday_dates)} holiday dates.")
 
     # For each holiday, mark the periods before, during, and after
     for holiday in holiday_dates:
@@ -111,7 +146,7 @@ def sales_behavior_holidays_auto(merged_df, sales_column, date_column, state_hol
         merged_df.loc[before_mask, 'HolidayPeriod'] = 'Before Holiday'
         merged_df.loc[during_mask, 'HolidayPeriod'] = 'During Holiday'
         merged_df.loc[after_mask, 'HolidayPeriod'] = 'After Holiday'
-
+        logger.info("Marked periods before, during, and after each holiday.")
     # Plot sales behavior before, during, and after holidays
     plt.figure(figsize=(12, 6))
     sns.barplot(x='HolidayPeriod', y=sales_column, data=merged_df, order=['Before Holiday', 'During Holiday', 'After Holiday', 'Normal'])
@@ -122,27 +157,32 @@ def sales_behavior_holidays_auto(merged_df, sales_column, date_column, state_hol
 
     # Group by the holiday period and summarize the sales behavior
     summary = merged_df.groupby('HolidayPeriod')[sales_column].agg(['mean', 'median', 'std', 'count'])
-    print("\nSales Behavior Summary by Holiday Period:\n", summary)
+    logger.info(f"Sales Behavior Summary by Holiday Period:\n{summary}")
 
 
 def sales_behavior_holidays_extended(merged_df, sales_column, date_column, state_holiday_column, school_holiday_column, days_before=7, days_after=7):
     """
     Check and compare sales behavior before, during, and after holidays using both StateHoliday and SchoolHoliday columns.
     """
-    
+    logger.info("Starting extended holiday sales behavior analysis.")
+
     # Ensure date_column is in datetime format
     merged_df[date_column] = pd.to_datetime(merged_df[date_column])
+    logger.info(f"Converted '{date_column}' column to datetime format.")
 
     # Extract holiday dates based on StateHoliday and SchoolHoliday columns
     state_holidays = merged_df[merged_df[state_holiday_column] != '0'][date_column].unique()
     school_holidays = merged_df[merged_df[school_holiday_column] == 1][date_column].unique()
+    logger.info(f"Found {len(state_holidays)} state holidays and {len(school_holidays)} school holidays.")
 
     # Combine both state and school holidays
     all_holidays = pd.Series(list(state_holidays) + list(school_holidays)).unique()
+    logger.info(f"Combined unique holidays: {len(all_holidays)} total holidays identified.")
 
     # Create a new column to indicate the sales time relative to the holiday
     merged_df['HolidayPeriod'] = 'Normal'
 
+    # Process each holiday and mark the before, during, and after periods
     for holiday in all_holidays:
         holiday_date = pd.to_datetime(holiday)
 
@@ -154,8 +194,11 @@ def sales_behavior_holidays_extended(merged_df, sales_column, date_column, state
         merged_df.loc[before_mask, 'HolidayPeriod'] = 'Before Holiday'
         merged_df.loc[during_mask, 'HolidayPeriod'] = 'During Holiday'
         merged_df.loc[after_mask, 'HolidayPeriod'] = 'After Holiday'
+        
+        logger.debug(f"Processed holiday: {holiday_date} - Marked before, during, and after periods.")
 
     # Plot sales behavior before, during, and after holidays
+    logger.info("Generating sales behavior plot.")
     plt.figure(figsize=(12, 6))
     sns.barplot(x='HolidayPeriod', y=sales_column, data=merged_df, order=['Before Holiday', 'During Holiday', 'After Holiday', 'Normal'])
     plt.title('Sales Behavior Before, During, and After Holidays (State and School Holidays)')
@@ -165,34 +208,42 @@ def sales_behavior_holidays_extended(merged_df, sales_column, date_column, state
 
     # Group by the holiday period and summarize the sales behavior
     summary = merged_df.groupby('HolidayPeriod')[sales_column].agg(['mean', 'median', 'std', 'count'])
-    print("\nSales Behavior Summary by Holiday Period:\n", summary)
+    logger.info(f"Sales Behavior Summary by Holiday Period:\n{summary}")
 
+    # Return the summary for further analysis if needed
+    return summary
 
 
 def seasonal_purchase_behavior(merged_df, sales_column, date_column, state_holiday_column):
     """
     Analyze seasonal purchase behaviors (e.g., Christmas, Easter) using StateHoliday and other known dates.
     """
+    logger.info("Starting seasonal purchase behavior analysis.")
     
     # Ensure date_column is in datetime format
     merged_df[date_column] = pd.to_datetime(merged_df[date_column])
-
+    logger.info(f"Converted {date_column} to datetime format.")
+    
     # Create a new column for seasonality
     merged_df['Season'] = 'Regular'
 
     # Define Christmas and Easter periods
     christmas_mask = merged_df[state_holiday_column] == 'c'
     easter_mask = merged_df[state_holiday_column] == 'b'
-    
+    logger.info("Defined Christmas and Easter masks.")
+
     # Define other common holiday periods if available
     public_holiday_mask = merged_df[state_holiday_column] == 'a'
+    logger.info("Defined public holiday mask.")
 
     # Update the 'Season' column based on the holiday type
     merged_df.loc[christmas_mask, 'Season'] = 'Christmas'
     merged_df.loc[easter_mask, 'Season'] = 'Easter'
     merged_df.loc[public_holiday_mask, 'Season'] = 'Public Holiday'
+    logger.info("Updated Season column based on holiday type.")
 
     # Plot seasonal behavior
+    logger.info("Plotting sales behavior by season.")
     plt.figure(figsize=(12, 6))
     sns.barplot(x='Season', y=sales_column, data=merged_df, order=['Regular', 'Christmas', 'Easter', 'Public Holiday'])
     plt.title('Sales Behavior During Seasonal Events (Christmas, Easter, Public Holidays)')
@@ -202,7 +253,10 @@ def seasonal_purchase_behavior(merged_df, sales_column, date_column, state_holid
 
     # Group by the season and summarize the sales behavior
     summary = merged_df.groupby('Season')[sales_column].agg(['mean', 'median', 'std', 'count'])
-    print("\nSales Behavior Summary by Season:\n", summary)
+    logger.info(f"Sales Behavior Summary by Season:\n{summary}")
+
+    return summary
+
 
 
 
@@ -210,12 +264,14 @@ def analyze_sales_customers_correlation(merged_df, sales_column, customers_colum
     """
     Analyze the correlation between sales and the number of customers.
     """
+    logger.info("Starting sales and customers correlation analysis.")
     
     # Calculate the Pearson correlation coefficient between sales and customers
     correlation = merged_df[[sales_column, customers_column]].corr().iloc[0, 1]
-    print(f"Correlation between {sales_column} and {customers_column}: {correlation:.4f}")
+    logger.info(f"Calculated correlation between {sales_column} and {customers_column}: {correlation:.4f}")
 
     # Scatter plot to visualize the relationship between sales and customers
+    logger.info("Generating scatter plot for sales and customers.")
     plt.figure(figsize=(10, 6))
     sns.scatterplot(x=customers_column, y=sales_column, data=merged_df)
     plt.title(f'Sales vs Customers (Correlation: {correlation:.4f})')
@@ -224,6 +280,7 @@ def analyze_sales_customers_correlation(merged_df, sales_column, customers_colum
     plt.show()
 
     # Optional: Joint plot for deeper analysis
+    logger.info("Generating joint plot for deeper correlation analysis.")
     sns.jointplot(x=customers_column, y=sales_column, data=merged_df, kind='reg', height=8)
     plt.show()
 
@@ -232,15 +289,19 @@ def analyze_promo_effects(merged_df, sales_column, customers_column, promo_colum
     """
     Analyze the effect of promotions on sales and customers.
     """
+    logger.info("Starting promo effect analysis on sales and customers.")
     
     # Separate promo and non-promo days
     promo_sales = merged_df[merged_df[promo_column] == 1]
     no_promo_sales = merged_df[merged_df[promo_column] == 0]
-    
+    logger.info(f"Found {len(promo_sales)} promo days and {len(no_promo_sales)} non-promo days.")
+
     # Calculate Sales per Customer to analyze how much customers spend on promo and non-promo days
     merged_df['SalesPerCustomer'] = merged_df[sales_column] / merged_df[customers_column]
+    logger.info("Calculated Sales per Customer.")
 
     # 1. Compare Sales on Promo vs Non-Promo Days
+    logger.info("Plotting Sales on Promo vs Non-Promo Days.")
     plt.figure(figsize=(10, 6))
     sns.barplot(x=promo_column, y=sales_column, data=merged_df)
     plt.title('Sales on Promo Days (1) vs Non-Promo Days (0)')
@@ -249,6 +310,7 @@ def analyze_promo_effects(merged_df, sales_column, customers_column, promo_colum
     plt.show()
 
     # 2. Compare Number of Customers on Promo vs Non-Promo Days
+    logger.info("Plotting Number of Customers on Promo vs Non-Promo Days.")
     plt.figure(figsize=(10, 6))
     sns.barplot(x=promo_column, y=customers_column, data=merged_df)
     plt.title('Number of Customers on Promo Days (1) vs Non-Promo Days (0)')
@@ -257,6 +319,7 @@ def analyze_promo_effects(merged_df, sales_column, customers_column, promo_colum
     plt.show()
 
     # 3. Compare Sales Per Customer on Promo vs Non-Promo Days
+    logger.info("Plotting Sales Per Customer on Promo vs Non-Promo Days.")
     plt.figure(figsize=(10, 6))
     sns.barplot(x=promo_column, y='SalesPerCustomer', data=merged_df)
     plt.title('Sales Per Customer on Promo Days (1) vs Non-Promo Days (0)')
@@ -266,8 +329,9 @@ def analyze_promo_effects(merged_df, sales_column, customers_column, promo_colum
 
     # Summary Statistics for Sales, Customers, and Sales Per Customer
     promo_summary = merged_df.groupby(promo_column)[[sales_column, customers_column, 'SalesPerCustomer']].agg(['mean', 'median', 'std', 'count'])
-    print("\nPromo Effect Summary (Sales, Customers, Sales Per Customer):\n", promo_summary)
+    logger.info(f"Promo Effect Summary (Sales, Customers, Sales Per Customer):\n{promo_summary}")
 
+    return promo_summary
 
 
 
