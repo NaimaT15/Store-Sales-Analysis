@@ -32,6 +32,56 @@ logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
 logger.info("Logger setup complete. Logging to both file and console.")
+def detect_outliers_iqr(df, column):
+    """
+    Detect outliers in a column using the IQR method.
+    Returns a boolean mask indicating where the outliers are.
+    """
+    Q1 = df[column].quantile(0.25)
+    Q3 = df[column].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    
+    # Identify outliers
+    outlier_mask = (df[column] < lower_bound) | (df[column] > upper_bound)
+    return outlier_mask
+
+def remove_outliers(df, numerical_columns):
+    """
+    Remove outliers from the DataFrame for specified numerical columns.
+    """
+    logger.info("Starting outlier detection and removal.")
+    for column in numerical_columns:
+        logger.info(f"Checking outliers for column: {column}")
+        outlier_mask = detect_outliers_iqr(df, column)
+        num_outliers = outlier_mask.sum()
+        logger.info(f"Found {num_outliers} outliers in column {column}.")
+        df = df[~outlier_mask]
+        logger.info(f"Outliers removed from column {column}.")
+    return df
+
+# Example usage
+def process_datasets(train_df, test_df, store_df):
+    """
+    Process train, test, and store datasets by checking and removing outliers.
+    """
+    # List of numerical columns where outliers should be checked
+    numerical_columns_train = ['Sales', 'Customers']  # Add more columns as needed
+    numerical_columns_test = []  # Add numerical columns if any
+    numerical_columns_store = ['CompetitionDistance']  # Add more columns as needed
+
+    # Remove outliers from the datasets
+    logger.info("Processing train dataset.")
+    train_cleaned = remove_outliers(train_df, numerical_columns_train)
+    
+    logger.info("Processing test dataset.")
+    test_cleaned = remove_outliers(test_df, numerical_columns_test)  # Update if you have numeric columns
+
+    logger.info("Processing store dataset.")
+    store_cleaned = remove_outliers(store_df, numerical_columns_store)
+
+    return train_cleaned, test_cleaned, store_cleaned
 
 def check_promotion_distribution(train_df, test_df, promotion_column):
     """
@@ -111,6 +161,7 @@ def clean_missing_values(merged_df):
 
     # Return the cleaned DataFrame
     return merged_df
+
 
 def sales_behavior_holidays_auto(merged_df, sales_column, date_column, state_holiday_column, school_holiday_column, days_before=7, days_after=7):
     """

@@ -1,3 +1,16 @@
-2024-09-20 14:53:01,888 - INFO - Logger setup complete. Logging to both file and console.
-2024-09-20 14:53:01,890 - INFO - Checking promotion distribution between training and test sets.
-2024-09-20 14:53:01,892 - INFO - Plotting the promotion distribution for the training and test sets.
+2024-09-20 15:25:37,284 - INFO - Logger setup complete. Logging to both file and console.
+2024-09-20 15:25:37,284 - INFO - Processing train dataset.
+2024-09-20 15:25:37,284 - INFO - Starting outlier detection and removal.
+2024-09-20 15:25:37,285 - INFO - Checking outliers for column: Sales
+2024-09-20 15:25:37,317 - INFO - Found 26694 outliers in column Sales.
+2024-09-20 15:25:37,371 - INFO - Outliers removed from column Sales.
+2024-09-20 15:25:37,372 - INFO - Checking outliers for column: Customers
+2024-09-20 15:25:37,409 - INFO - Found 22641 outliers in column Customers.
+2024-09-20 15:25:37,482 - INFO - Outliers removed from column Customers.
+2024-09-20 15:25:37,484 - INFO - Processing test dataset.
+2024-09-20 15:25:37,485 - INFO - Starting outlier detection and removal.
+2024-09-20 15:25:37,485 - INFO - Processing store dataset.
+2024-09-20 15:25:37,486 - INFO - Starting outlier detection and removal.
+2024-09-20 15:25:37,486 - INFO - Checking outliers for column: CompetitionDistance
+2024-09-20 15:25:37,490 - INFO - Found 108 outliers in column CompetitionDistance.
+2024-09-20 15:25:37,491 - INFO - Outliers removed from column CompetitionDistance.
