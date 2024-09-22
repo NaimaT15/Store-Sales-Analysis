@@ -366,6 +366,7 @@ Name: proportion, dtype: float64
 2024-09-20 15:54:57,895 - INFO - Marked periods before, during, and after each holiday.
 2024-09-20 15:54:57,917 - INFO - Marked periods before, during, and after each holiday.
 2024-09-20 15:54:57,939 - INFO - Marked periods before, during, and after each holiday.
+
 2024-09-20 15:54:57,960 - INFO - Marked periods before, during, and after each holiday.
 2024-09-20 15:54:57,983 - INFO - Marked periods before, during, and after each holiday.
 2024-09-20 15:54:58,003 - INFO - Marked periods before, during, and after each holiday.
