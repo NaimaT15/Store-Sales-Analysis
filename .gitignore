@@ -1,4 +1,4 @@
 data
 venv
-./notebooks/*.log
 sales_analysis.log
+notebooks/*.log
