@@ -108,6 +108,7 @@ def preprocess_data(train_df, test_df):
 
         # Get feature names after encoding
         encoded_cat_names = preprocessor.named_transformers_['cat'].get_feature_names_out(categorical_cols)
+        encoded_cat_names = [name.replace(',', '_') for name in encoded_cat_names]
         numeric_cols = train_features.drop(columns=categorical_cols).columns
         final_feature_names = np.concatenate([encoded_cat_names, numeric_cols])
 
