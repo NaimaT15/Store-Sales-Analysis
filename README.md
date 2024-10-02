@@ -91,9 +91,6 @@ Access the FastAPI API documentation at `http://127.0.0.1:8000/docs.`
 
 Contributions are welcome! Please fork this repository and submit a pull request with your changes.
 
-## License
-This project is licensed under the MIT License.
-
 ## Acknowledgements
 - **10 Academy:** For providing the challenge.
 
